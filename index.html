@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Dobby Support Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root{color-scheme:light;
+  --bg:#F4F6FB;--surface:#FFFFFF;--surface2:#EEF1F8;--border:#DDE2EF;
+  --primary:#4F5EE8;--primary-light:#6B78F5;--primary-glow:rgba(79,94,232,0.12);
+  --accent:#0CA87E;--warn:#D97706;--danger:#DC2626;
+  --text:#111827;--text-muted:#6B7280;--text-dim:#9CA3AF;
+  --radius:12px;--radius-sm:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:13px;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.logo{display:flex;align-items:center;gap:9px;}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;}
+.logo-text{font-size:17px;font-weight:700;letter-spacing:-.4px;}
+.logo-sub{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.period-badge{background:var(--primary-glow);border:1px solid var(--primary);color:var(--primary);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;}
+.hint{color:var(--text-muted);font-size:11px;}
+.filter-tabs{display:flex;gap:2px;background:var(--surface2);padding:3px;border-radius:var(--radius-sm);border:1px solid var(--border);}
+.tab-btn{padding:4px 13px;border:none;cursor:pointer;border-radius:5px;font-size:11px;font-weight:600;transition:all .15s;background:transparent;color:var(--text-muted);}
+.tab-btn.active{background:var(--primary);color:#fff;}
+.tab-btn:hover:not(.active){color:var(--text);}
+main{padding:24px 28px;max-width:1600px;margin:0 auto;}
+.section-label{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;margin-top:28px;}
+.section-label:first-child{margin-top:0;}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:6px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px 14px;position:relative;overflow:hidden;transition:border-color .2s;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.kpi-card:hover{border-color:var(--primary);}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--bar-color,var(--primary));border-radius:var(--radius) var(--radius) 0 0;}
+.kpi-card.danger{--bar-color:var(--danger);}
+.kpi-card.warn{--bar-color:var(--warn);}
+.kpi-card.success{--bar-color:var(--accent);}
+.kpi-card.neutral{--bar-color:var(--text-dim);}
+.kpi-label{font-size:10px;color:var(--text-muted);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;}
+.kpi-value{font-size:30px;font-weight:800;letter-spacing:-1.5px;line-height:1;}
+.kpi-value.big{font-size:36px;}
+.kpi-unit{font-size:13px;font-weight:500;color:var(--text-muted);margin-left:2px;}
+.kpi-sub{font-size:10px;color:var(--text-muted);margin-top:5px;}
+.danger-text{color:var(--danger);}
+.good{color:var(--accent);}
+.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px;}
+.grid-2-1{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+.card-title{font-size:12px;font-weight:700;color:var(--text);}
+.card-subtitle{font-size:10px;color:var(--text-muted);margin-top:2px;}
+.card-body{flex:1;min-height:0;}
+.chart-wrap{position:relative;width:100%;}
+.data-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+.data-table th{text-align:left;color:var(--text-dim);font-weight:600;font-size:10px;letter-spacing:.4px;text-transform:uppercase;padding:0 10px 8px;border-bottom:1px solid var(--border);}
+.data-table td{padding:9px 10px;border-bottom:1px solid var(--surface2);color:var(--text);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--surface2);}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;}
+.badge-blue{background:rgba(79,94,232,.1);color:var(--primary);}
+.badge-green{background:rgba(12,168,126,.1);color:var(--accent);}
+.badge-orange{background:rgba(217,119,6,.1);color:var(--warn);}
+.badge-red{background:rgba(220,38,38,.1);color:var(--danger);}
+.badge-gray{background:rgba(107,114,128,.1);color:var(--text-muted);}
+.aging-item{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.aging-label{font-size:11px;color:var(--text-muted);width:100px;flex-shrink:0;}
+.aging-bar-wrap{flex:1;height:7px;background:var(--surface2);border-radius:5px;overflow:hidden;}
+.aging-bar{height:100%;border-radius:5px;}
+.aging-count{font-size:12px;font-weight:700;width:28px;text-align:right;flex-shrink:0;}
+.reporter-org-name{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-dim);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.pill-row{display:flex;gap:7px;flex-wrap:wrap;}
+.pill{display:flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+.pill-dot{width:7px;height:7px;border-radius:50%;}
+.pill-num{font-weight:800;margin-left:3px;}
+.no-data{color:var(--text-dim);font-size:11px;padding:16px;text-align:center;}
+footer{text-align:center;padding:20px;color:var(--text-dim);font-size:10px;border-top:1px solid var(--border);margin-top:32px;}
+</style>
+</head>
+<body>
+
+<div id="dashboard">
+<header>
+  <div class="logo">
+    <div class="logo-mark">D</div>
+    <div>
+      <div class="logo-text">Dobby</div>
+      <div class="logo-sub">Support Dashboard · 29 Apr 2026, 10:12</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="filter-tabs" id="periodTabs">
+      <button class="tab-btn active" data-period="all">All time</button>
+      <button class="tab-btn" data-period="q4">Q4 2025</button>
+      <button class="tab-btn" data-period="q1">Q1 2026</button>
+      <button class="tab-btn" data-period="q2">Q2 2026</button>
+    </div>
+    <div class="period-badge" id="headerBadge">Loading…</div>
+    <div class="hint" id="headerHint"></div>
+  </div>
+</header>
+
+<main>
+  <div class="section-label">Core Metrics</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Total Tickets</div><div class="kpi-value big" id="kpi-total">—</div><div class="kpi-sub" id="kpi-total-sub"></div></div>
+    <div class="kpi-card danger"><div class="kpi-label">Open / Active</div><div class="kpi-value" style="color:var(--danger)" id="kpi-open">—</div><div class="kpi-sub" id="kpi-open-sub"></div></div>
+    <div class="kpi-card success"><div class="kpi-label">Resolved</div><div class="kpi-value" style="color:var(--accent)" id="kpi-done">—</div><div class="kpi-sub" id="kpi-done-sub"></div></div>
+    <div class="kpi-card warn"><div class="kpi-label">Avg Resolution</div><div class="kpi-value" id="kpi-avg">—<span class="kpi-unit">d</span></div><div class="kpi-sub" id="kpi-avg-sub"></div></div>
+    <div class="kpi-card success"><div class="kpi-label">Median Resolution</div><div class="kpi-value" id="kpi-med">—<span class="kpi-unit">d</span></div><div class="kpi-sub">P50 · calendar days</div></div>
+    <div class="kpi-card neutral"><div class="kpi-label">Resolution Rate</div><div class="kpi-value" id="kpi-rate">—<span class="kpi-unit">%</span></div><div class="kpi-sub" id="kpi-rate-sub"></div></div>
+  </div>
+  <div style="margin:16px 0 24px"><div class="pill-row" id="statusPills"></div></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Created vs. Resolved Over Time</div><div class="card-subtitle" id="cvrSub">Weekly</div></div></div>
+      <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="cvrChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Tickets by Customer Organisation</div><div class="card-subtitle" id="typeSub"></div></div></div>
+      <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="typeChart"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="section-label">Resolution Performance</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Resolution Time Distribution</div><div class="card-subtitle" id="resAllSub"></div></div></div>
+      <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="resAllChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Monthly Ticket Volume</div><div class="card-subtitle" id="resBugSub"></div></div></div>
+      <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="resBugChart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-header"><div><div class="card-title">Ticket Volume Over Time by Customer</div><div class="card-subtitle">Monthly · hover for details · gaps = no tickets</div></div></div>
+    <div class="card-body">
+      <div class="chart-wrap" style="height:240px"><canvas id="trendChart"></canvas></div>
+      <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap" id="trendLegend"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Backlog Aging</div>
+  <div class="grid-4" id="agingKpis"></div>
+  <div class="grid-2-1" style="margin-top:12px">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Open Tickets · All Customers</div><div class="card-subtitle" id="oldestSub"></div></div></div>
+      <div class="card-body">
+        <table class="data-table">
+          <thead><tr><th>Key</th><th>Status</th><th>Customer</th><th>Summary</th><th>Created</th><th style="text-align:right">Age (d)</th></tr></thead>
+          <tbody id="oldestTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Open Backlog by Customer</div><div class="card-subtitle" id="backlogSub"></div></div></div>
+      <div class="card-body"><div id="backlogBars" style="margin-top:6px"></div></div>
+    </div>
+  </div>
+
+  <div class="section-label">Customer Visibility</div>
+  <div class="grid-2-1">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Tickets by Customer</div><div class="card-subtitle" id="orgAllSub"></div></div></div>
+      <div class="card-body"><div class="chart-wrap" style="height:240px"><canvas id="orgAllChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Open Tickets by Customer</div><div class="card-subtitle" id="orgOpenSub"></div></div></div>
+      <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="orgOpenChart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-header"><div><div class="card-title">Top Reporters by Customer</div><div class="card-subtitle">Who submits the most tickets per organisation</div></div></div>
+    <div class="card-body"><div id="reportersGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px"></div></div>
+  </div>
+
+  <div style="background:rgba(12,168,126,.06);border:1px solid rgba(12,168,126,.2);border-radius:var(--radius);padding:14px 18px;margin-top:24px;margin-bottom:28px;display:flex;gap:12px;align-items:flex-start;">
+    <div style="font-size:16px;margin-top:1px">ℹ️</div>
+    <div style="font-size:11px;color:var(--text-muted);line-height:1.7">Data from Jira DS project · Dobby &amp; Satcar excluded · Refreshed 29 Apr 2026, 10:12 · Resolution time = created → resolutiondate diff in calendar days</div>
+  </div>
+</main>
+<footer id="footerNote">Dobby Support Dashboard · Refreshed 29 Apr 2026, 10:12</footer>
+</div>
+
+<script>
+const EXCLUDE_ORGS = new Set(['Dobby','Satcar','dobby','satcar']);
+
+const PERIODS = {
+  all: { label:'All time',  badge:'Full history',       start:null,                    end:null },
+  q4:  { label:'Q4 2025',   badge:'Oct – Dec 2025',     start:new Date('2025-10-01'), end:new Date('2025-12-31') },
+  q1:  { label:'Q1 2026',   badge:'Jan – Mar 2026',     start:new Date('2026-01-01'), end:new Date('2026-03-31') },
+  q2:  { label:'Q2 2026',   badge:'Apr – Jun 2026',     start:new Date('2026-04-01'), end:new Date('2026-06-30') },
+};
+
+const ORG_COLORS = { YellowBeard:'#DC2626','Slow Forest':'#4F5EE8','Selecta DK':'#0CA87E', Selecta:'#0CA87E', CSG:'#D97706', Unknown:'#9CA3AF' };
+const CHART_DEF = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{display:false}, tooltip:{
+    backgroundColor:'#1F2937', borderColor:'#374151', borderWidth:1,
+    titleColor:'#F9FAFB', bodyColor:'#9CA3AF', padding:9, cornerRadius:7
+  }},
+  scales:{
+    x:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:10}},border:{color:'#E5E7EB'}},
+    y:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:10}},border:{color:'#E5E7EB'}}
+  }
+};
+
+// ── BAKED-IN TICKET DATA ──────────────────────────────────
+const _TK=['k','t','s','sc','o','r','cd','su'];
+const _RD=[["DS-1","Email request","Cancelled","Done","Unknown","kasperweis@icloud.com","2025-09-08","Testing"],["DS-2","Email request","Done","Done","Unknown","Mads Gregersen","2025-09-08","En særlig feature til en en særlig kunder"],["DS-3","Submit a new request","Done","Done","Unknown","kasper@satcar.dk","2025-09-08","Testing support!"],["DS-10","Report a Bug","Cancelled","Done","Unknown","Kasper Weis","2025-09-18","Big issue"],["DS-17","Report a Bug","Done","Done","Unknown","Kasper Weis","2025-09-25","Theres an issue with the emails"],["DS-21","Report a Bug","Done","Done","TechScale","Muhammad Shakir Ali","2025-09-29","The customer is unable to report any errors via the QR code"],["DS-23","Report a Bug","Done","Done","TechScale","Muhammad Shakir Ali","2025-10-02","The machine's QR code is functioning but browser takes long time to load"],["DS-24","Report a Bug","Done","Done","TechScale","Muhammad Shakir Ali","2025-10-02","In the mobile app, the technician is unable to see City and Serial Number"],["DS-25","Suggest a new feature","Done","Done","Verdi/Carmen Koffie","Mads Gregersen","2025-10-06","Location of Spareparts in side vans (warehouses"],["DS-26","Report a Bug","Done","Done","Unknown","Mads Gregersen","2025-10-07","This is test bug"],["DS-27","Report a Bug","Done","Done","Unknown","Mads Gregersen","2025-10-08","I can't close ticket in the app"],["DS-28","Report a Bug","Done","Done","Unknown","Mads Gregersen","2025-10-08","rescheduling does not wotk in the app"],["DS-29","Email request","Done","Done","Unknown","Mads Test G","2025-10-08","Test bug with several contacts tracking"],["DS-30","Email request","Done","Done","Unknown","Laurits Gregertsen","2025-10-08","test bug"],["DS-31","Email request","Done","Done","Fgregersen.dk","Mads Test G","2025-10-08","another test ticket"],["DS-32","Email request","Done","Done","Unknown","Kasper Test","2025-10-08","Pen15 issue"],["DS-33","Email request","Done","Done","YellowBeard","daniel@yellowbeard.com","2025-10-08","YellowBeard"],["DS-34","Ask a question","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-08","Why can't I insert an image here that I have a question about?"],["DS-35","Ask a question","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-08","Why is expected completion status showing?"],["DS-36","Ask a question","Escalated","In Progress","YellowBeard","Trine Stauersbøll","2025-10-08","Reports"],["DS-37","Report a Bug","Done","Done","YellowBeard","Trine Stauersbøll","2025-10-09","Date"],["DS-38","Report a Bug","Done","Done","YellowBeard","Dorthe Bisgaard","2025-10-09","Error adding data on a Agreement - Possible Gurantees"],["DS-39","Report a Bug","Done","Done","YellowBeard","Kasper M","2025-10-09","Locked tickets"],["DS-40","Ask a question","Done","Done","Dobby","Mads Gregersen","2025-10-09","How do I create additional users"],["DS-41","Report a Bug","Done","Done","Dobby","Mads Gregersen","2025-10-09","Technician app loads slowly"],["DS-42","Suggest a new feature","Done","Done","Dobby","msa@dobby.io","2025-10-09","Weather integration"],["DS-43","Report a Bug","Done","Done","Dobby","Mads Gregersen","2025-10-09","Timezone of tickets is wrong"],["DS-44","Suggest a new feature","Done","Done","Dobby","Mads Gregersen","2025-10-09","Similate longer shifts"],["DS-45","Report a Bug","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-09","I haven't received an email notification that the technician tagged me in a comment"],["DS-46","Ask a question","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-09","Why was DS-45 closed before it was resolved?"],["DS-47","Report a Bug","Done","Done","YellowBeard","Trine Stauersbøll","2025-10-10","Hede Holding as a location for multiple users ?"],["DS-48","Ask a question","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-10","The technicians are asking if they can get access to the Dobby Help Center"],["DS-49","Report a Bug","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-13","There are two A800 units listed under the customer with the same serial number"],["DS-50","Ask a question","Done","Done","Slow Forest","Laura Herk-Hansen","2025-10-13","Finnish Customer Implementation"],["DS-51","Submit a new request","Done","Done","Slow Forest","charlotte@slowforest.com","2025-10-14","Automated shipping email"],["DS-52","Report a Bug","Done","Done","Slow Forest","orders@slowforest.com","2025-10-14","No Germany order notification received in Slow order mailbox"],["DS-53","Submit a new request","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-14","Why can't I insert an image here that I have for a new request?"],["DS-54","Report a Bug","Done","Done","YellowBeard","Rikke Bang","2025-10-14","Watergate has no longer access to their technician tasks asigned to them in SMART?"],["DS-55","Ask a question","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-14","Isn't it Economic anymore that controls whether a customer is blocked?"],["DS-56","Report a Bug","Done","Done","YellowBeard","Trine Stauersbøll","2025-10-14","I cannot change 'expired' from YES to NO on the agreement."],["DS-57","Report a Bug","Done","Done","YellowBeard","Rikke Bang","2025-10-14","Option - user group is missing Company name when creating new users in SMART"],["DS-58","Email request","Done","Done","Dobby","kw@dobby.io","2025-10-14","Worldline is adjusted"],["DS-59","Report a Bug","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-15","The handshake for the service agreement is not showing on the machine"],["DS-60","Submit a new request","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-15","It would be great if the service task included who the salesperson is"],["DS-61","Submit a new request","Done","Done","Slow Forest","charlotte@slowforest.com","2025-10-15","Update password user account"],["DS-62","Submit a new request","Done","Done","Slow Forest","charlotte@slowforest.com","2025-10-15","Order confirmation Slow Germany Site"],["DS-63","Submit a new request","Done","Done","Slow Forest","charlotte@slowforest.com","2025-10-15","Order notes"],["DS-64","Email request","Cancelled","Done","Unknown","m365copilotupdates@microsoft.com","2025-10-16","Prøv Microsoft 365 Copilot Chat med GPT-5"],["DS-65","Report a Bug","Done","Done","Slow Forest","orders@slowforest.com","2025-10-16","Double Email Confirmation for Germany order notification received"],["DS-66","Ask a question","Escalated","In Progress","Slow Forest","Laura Herk-Hansen","2025-10-16","Friends and family prices"],["DS-67","Report a Bug","Done","Done","YellowBeard","Trine Stauersbøll","2025-10-17","Can't sync customers in shop anymore..."],["DS-68","Report a Bug","Done","Done","YellowBeard","Dorthe Bisgaard","2025-10-19","Not able to save a new agreement on a customer"],["DS-69","Ask a question","Done","Done","YellowBeard","Rikke Bang","2025-10-20","Case marked Done - but the issue is not resolved"],["DS-70","Report a Bug","Done","Done","Slow Forest","orders@slowforest.com","2025-10-20","Order 731 did not push through to WMS E-synergi"],["DS-71","Report a Bug","Done","Done","YellowBeard","Rikke Bang","2025-10-21","Kupons for customer B93 Kontrakt Fodbold APS keep being recalled"],["DS-72","Report a Bug","Done","Done","YellowBeard","Dorthe Bisgaard","2025-10-21","Not able to make changes in a existing agreement"],["DS-73","Submit a new request","Done","Done","Slow Forest","charlotte@slowforest.com","2025-10-22","Update password user account"],["DS-74","Submit a new request","Done","Done","Slow Forest","charlotte@slowforest.com","2025-10-22","Order confirmation German Site"],["DS-75","Submit a new request","Done","Done","Slow Forest","charlotte@slowforest.com","2025-10-22","Order notes"],["DS-76","Report a Bug","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-22","Ticket DS-59 is marked as done, but service agreement handshake is stil not showing on Reneka machine"],["DS-77","Report a Bug","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-22","Service agreement handshake icon is not showing on the machine"],["DS-78","Report a Bug","Done","Done","YellowBeard","Rikke Bang","2025-10-23","How is it possible that a customer can create a service ticket for a machine when it is inactive?"],["DS-79","Report a Bug","Done","Done","YellowBeard","Dorthe Bisgaard","2025-10-24","LBL_AG text on agreement"],["DS-80","Report a Bug","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-24","Technicians cannot see images in the machine's service history"],["DS-81","Report a Bug","Done","Done","YellowBeard","Dorthe Bisgaard","2025-10-24","Not able to save a new Agreement - Again........"],["DS-82","Report a Bug","Done","Done","YellowBeard","Dorthe Bisgaard","2025-10-27","Not able to save a new agreement - AGAIN!"],["DS-83","Report a Bug","Done","Done","YellowBeard","Kasper M","2025-10-27","Messed up machine history"],["DS-84","Submit a new request","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-27","Option to display and manage multiple machines"],["DS-85","Ask a question","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-27","Machine details included information which seems to be missing or has it been relocated?"],["DS-86","Report a Bug","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-27","Machines are displaying a handshake (has no service agreement)"],["DS-87","The customer is getting x 5 the invoices","Done","Done","YellowBeard","Michael Parris","2025-10-27T14:02:31.788+0100","Report a Bug"],["DS-88","Sign up botton in OT has been added again.","Done","Done","Slow Forest","Laura Herk-Hansen","2025-10-28T09:55:40.004+0100","Report a Bug"],["DS-89","Not able to delete an agreement","Done","Done","YellowBeard","Dorthe Bisgaard","2025-10-28T11:09:38.271+0100","Report a Bug"],["DS-90","It is not possible to upload a picture when creating a task on a watercooler","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-28T17:59:02.996+0100","Report a Bug"],["DS-91","Order did not went to WMS","Done","Done","Unknown","Fate Dupio","2025-10-29T09:38:16.583+0100","Report a Bug"],["DS-92","Synchronize in shop does not work....","Done","Done","YellowBeard","Trine Stauersboel","2025-10-30T08:15:08.427+0100","Report a Bug"],["DS-93","The customer exists in Smart but not in the shop.","Done","Done","YellowBeard","Trine Stauersboel","2025-10-30T10:22:12.546+0100","Report a Bug"],["DS-94","How can a machine have a service agreement handshake, when it is assigned to an inactive and closed agreement?","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-30T10:24:56.724+0100","Ask a question"],["DS-95","PO mandatory in shop","Done","Done","YellowBeard","Dorthe Bisgaard","2025-10-30T11:30:25.849+0100","Submit a new request"],["DS-96","Not able to see Agreement detail","Done","Done","YellowBeard","Dorthe Bisgaard","2025-10-31T09:17:25.463+0100","Report a Bug"],["DS-97","Wrong product price in Order Confirmation Email","Done","Done","Slow Forest","Leila Aviso","2025-10-31T11:07:44.878+0100","Report a Bug"],["DS-98","Automatically saved contact information from a previous service task","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-31T15:33:06.073+0100","Ask a question"],["DS-99","The system has created two appointments","Done","Done","YellowBeard","Camilla K. Ewers","2025-10-31T15:44:22.127+0100","Report a Bug"],["DS-100","Customer is not receiving any emails","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-04T15:45:54.375+0100","Report a Bug"],["DS-101","kaffeaftale","Done","Done","YellowBeard","Michael Tjoerved Hansen","2025-11-05T09:27:19.374+0100","Report a Bug"],["DS-102","kaffeaftale","Done","Done","YellowBeard","Michael Tjoerved Hansen","2025-11-05T09:47:42.282+0100","Report a Bug"],["DS-103","Wrong scrap value on contract","Done","Done","YellowBeard","Dorthe Bisgaard","2025-11-06T08:26:22.697+0100","Report a Bug"],["DS-104","Tech account is not able to disable notifications on app","Done","Done","YellowBeard","Kasper M","2025-11-06T11:20:15.132+0100","Report a Bug"],["DS-105","Change in color scheme","Done","Done","YellowBeard","Kasper M","2025-11-06T11:23:59.995+0100","Submit a new request"],["DS-106","Drag and drop technician tab on app.","Done","Done","YellowBeard","Kasper M","2025-11-06T12:15:33.166+0100","Report a Bug"],["DS-107","The other technicians cannot see our technician Theis in the overview.","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-06T13:43:06.946+0100","Report a Bug"],["DS-108","Can i use the same product for different country sites?","Done","Done","Slow Forest","Laura Herk-Hansen","2025-11-06T15:40:44.347+0100","Ask a question"],["DS-109","No spare parts shown in Lager Produkter","Escalated","In Progress","YellowBeard","Kasper M","2025-11-07T16:39:54.625+0100","Report a Bug"],["DS-110","Spare part location","Done","Done","YellowBeard","Kasper M","2025-11-07T17:19:45.242+0100","Suggest a new feature"],["DS-111","Scanning of spare parts from warehouse to car","Done","Done","YellowBeard","Kasper M","2025-11-07T17:27:59.506+0100","Suggest a new feature"],["DS-112","The location of the customer in the task is not correct.","Done","Done","YellowBeard","Trine Stauersboel","2025-11-10T13:14:00.256+0100","Report a Bug"],["DS-113","Agreement show as expired when it does not actually expire until 2031","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-10T13:48:27.867+0100","Report a Bug"],["DS-114","Agreement attachment not visible","Done","Done","YellowBeard","Dorthe Bisgaard","2025-11-11T09:33:44.627+0100","Report a Bug"],["DS-115","NO CONFIRMATION EMAIL RECEIVED","Done","Done","Slow Forest","orders@slowforest.com","2025-11-11T11:43:54.210+0100","Report a Bug"],["DS-116","Confirmation Notice missing customers Company Name on Delivery and Billing info","Done","Done","Slow Forest","Leila Aviso","2025-11-12T14:29:00.972+0100","Report a Bug"],["DS-117","Missing the status of machines","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-12T14:29:39.905+0100","Report a Bug"],["DS-118","No email received when tagged in a service task","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-12T14:34:18.532+0100","Report a Bug"],["DS-119","Cup agreement - not going through on the shop....again.","Done","Done","YellowBeard","Trine Stauersboel","2025-11-13T08:44:11.512+0100","Report a Bug"],["DS-120","Why is there suddenly a star next to the companys name?","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-13T09:09:48.850+0100","Ask a question"],["DS-121","Machine notes are not visible to our technicians","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-13T10:04:30.635+0100","Report a Bug"],["DS-122","Question site","Done","Done","Slow Forest","Laura Herk-Hansen","2025-11-13T13:47:04.513+0100","Ask a question"],["DS-123","It should clearly show that there is payment on the machine","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-14T09:23:46.562+0100","Submit a new request"],["DS-124","When duplicating a task, the title and description are not carried over","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-14T10:25:37.343+0100","Report a Bug"],["DS-125","Mandatory for customer to provide their name, telephone number, and email address before the service task can be submitted","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-18T10:07:07.111+0100","Submit a new request"],["DS-126","Is there something wrong with the shop? Three different customers are unable to log in.","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-18T10:14:17.646+0100","Report a Bug"],["DS-127","Cup agreement is not showing for customer Visma","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-18T11:02:27.229+0100","Report a Bug"],["DS-128","Tickets is sorted by Created On not by Occurred At","Done","Done","YellowBeard","Kasper M","2025-11-18T11:13:46.503+0100","Report a Bug"],["DS-129","The oldest tasks should appear first in the task list","Escalated","In Progress","YellowBeard","Camilla K. Ewers","2025-11-18T13:20:03.056+0100","Submit a new request"],["DS-130","When the customer creates a task, it shows test under the company name","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-19T10:17:31.583+0100","Report a Bug"],["DS-131","Technician Henrik can not close these tasks","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-19T10:45:00.451+0100","Report a Bug"],["DS-132","Technician Rene can not close 1 task","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-19T10:57:03.364+0100","Report a Bug"],["DS-133","Technicians should be able to filter by postal codes in the task overview","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-19T17:27:20.642+0100","Submit a new request"],["DS-134","Technicians needs a filter on the front page/homepage so you can choose which tasks you want to display on the map","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-19T17:47:38.580+0100","Submit a new request"],["DS-135","Is it possible to make filters in the app permanent?","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-19T17:52:28.756+0100","Ask a question"],["DS-136","Orders not being sent","Done","Done","Slow Forest","charlotte@slowforest.com","2025-11-20T11:47:34.720+0100","Report a Bug"],["DS-137","Customer has not received any emails","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-20T11:49:08.484+0100","Report a Bug"],["DS-138","Duplicate Service template","Done","Done","Dobby","Mads Gregersen","2025-11-20T13:21:10.406+0100","Submit a new request"],["DS-139","Watertrade cannot complete the tasks","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-20T16:55:16.193+0100","Report a Bug"],["DS-140","No email confirmation received","Done","Done","Slow Forest","orders@slowforest.com","2025-11-21T10:11:11.760+0100","Report a Bug"],["DS-141","test feature","Done","Done","Fgregersen.dk","Mads Test G","2025-11-21T10:35:12.199+0100","Suggest a new feature"],["DS-142","Invoice not to be found + has other invoices not been forwarded?","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-21T14:21:14.334+0100","Report a Bug"],["DS-143","Orders placed in the shop do not appear in e-conomic.","Done","Done","YellowBeard","Trine Stauersboel","2025-11-21T14:54:31.595+0100","Report a Bug"],["DS-144","Favourite spareparts by technician","Escalated","In Progress","Unknown","Mads Gregersen","2025-11-25T14:21:40.605+0100","Suggest a new feature"],["DS-145","Location details disappeared from the machine overview in the app...","Done","Done","YellowBeard","Trine Stauersboel","2025-11-27T10:31:10.547+0100","Report a Bug"],["DS-146","New sites","Done","Done","Slow Forest","Laura Herk-Hansen","2025-11-27T11:12:32.976+0100","Ask a question"],["DS-147","Friends and family prices","Escalated","In Progress","Slow Forest","Laura Herk-Hansen","2025-11-27T12:40:46.135+0100","Ask a question"],["DS-148","The location details for two machines have disappeared","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-27T14:36:50.619+0100","Report a Bug"],["DS-149","Customers cup agreement showing as expired, when it is actually valid until 31/05/2029","Done","Done","YellowBeard","Camilla K. Ewers","2025-11-27T15:29:29.701+0100","Report a Bug"],["DS-150","Orders Not Sent","Done","Done","Slow Forest","charlotte@slowforest.com","2025-11-27T20:08:52.877+0100","Report a Bug"],["DS-151","Cannot log in","Done","Done","Dobby","Mads Gregersen","2025-11-28T15:33:17.305+0100","Report a Bug"],["DS-152","kaffeaftale","Done","Done","YellowBeard","Michael Tjoerved Hansen","2025-12-01T09:46:29.486+0100","Report a Bug"],["DS-153","Smart","Done","Done","YellowBeard","Michael Tjoerved Hansen","2025-12-02T15:44:12.726+0100","Report a Bug"],["DS-154","kaffeaftale","Done","Done","YellowBeard","Michael Tjoerved Hansen","2025-12-03T15:15:18.916+0100","Report a Bug"],["DS-155","No order confirmation received","Done","Done","Slow Forest","orders@slowforest.com","2025-12-04T08:52:51.983+0100","Report a Bug"],["DS-156","Error in post code filtering","Done","Done","Dobby","Mads Gregersen","2025-12-05T12:16:45.663+0100","Report a Bug"],["DS-157","Tax","Done","Done","Slow Forest","Laura Herk-Hansen","2025-12-08T14:41:52.042+0100","Ask a question"],["DS-158","B2C payment status","Done","Done","Slow Forest","Laura Herk-Hansen","2025-12-08T14:48:16.255+0100","Ask a question"],["DS-159","My app does not work","Cancelled","Done","Dobby","Mads Gregersen","2025-12-09T11:16:56.427+0100","Report a Bug"],["DS-160","Sales Person disappears on the customer","Done","Done","YellowBeard","Trine Stauersboel","2025-12-09T13:43:43.519+0100","Report a Bug"],["DS-161","Cant change the shipping address on coffee subscription.","Done","Done","YellowBeard","Trine Stauersboel","2025-12-10T11:13:12.689+0100","Report a Bug"],["DS-162","ccczz","Done","Done","YellowBeard","Trine Stauersboel","2025-12-10T14:25:03.076+0100","Report a Bug"],["DS-163","All machines are shown for customers who have no machines.","Done","Done","YellowBeard","Trine Stauersboel","2025-12-11T11:47:10.648+0100","Report a Bug"],["DS-164","Twest","Done","Done","Unknown","amz@yopmail.com","2025-12-12T08:41:55.196+0100","Report a Bug"],["DS-165","The customer cannot see any data in the overview.","Done","Done","YellowBeard","Trine Stauersboel","2025-12-12T12:59:21.459+0100","Report a Bug"],["DS-166","Technician Rene can not close this task","Done","Done","YellowBeard","Camilla K. Ewers","2025-12-17T12:57:03.508+0100","Report a Bug"],["DS-167","Customer cant se Machine cleaning detail in Smart...","Done","Done","YellowBeard","Trine Stauersboel","2025-12-17T21:40:29.418+0100","Report a Bug"],["DS-168","Testing the Assignee","Done","Done","Unknown","abdul.moeez@yopmail.com","2025-12-18T15:27:18.120+0100","Report a Bug"],["DS-169","kaffeaftale","Done","Done","YellowBeard","Michael Tjoerved Hansen","2025-12-19T09:37:50.141+0100","Report a Bug"],["DS-170","All YellowBeard Tickets","Done","Done","Unknown","Abdul Moeez","2025-12-19T11:28:42.900+0100","Email request"],["DS-171","bug on service plan","Done","Done","CSG","stephanie@csg-eu.com","2025-12-22T16:02:59.195+0100","Report a Bug"],["DS-172","Integration OT german site","Done","Done","Slow Forest","Laura Herk-Hansen","2025-12-30T12:06:30.024+0100","Submit a new request"],["DS-173","kop rapport","Done","Done","YellowBeard","Michael Tjoerved Hansen","2026-01-02T11:58:43.491+0100","Report a Bug"],["DS-174","Not possible to change the year so that you can view previous cleanings.","Done","Done","YellowBeard","Camilla K. Ewers","2026-01-05T14:15:08.291+0100","Submit a new request"],["DS-175","Testing For Ticket Status","Cancelled","Done","Unknown","Mike","2026-01-06T13:28:42.907+0100","Report a Bug"],["DS-176","JIRA TESTING","Done","Done","Unknown","Mike","2026-01-06T13:45:48.496+0100","Report a Bug"],["DS-177","JIRA TEST","Done","Done","Unknown","Abdul Moeez","2026-01-06T14:09:58.058+0100","Report a Bug"],["DS-178","Faktura/kopaftale Spira Forsikring GS","Done","Done","YellowBeard","Michael Tjoerved Hansen","2026-01-07T08:11:51.171+0100","Report a Bug"],["DS-179","Smart app is not working on Android","Done","Done","YellowBeard","Camilla K. Ewers","2026-01-07T10:05:35.646+0100","Report a Bug"],["DS-180","Issues with the dashboard","Done","Done","Slow Forest","Laura Herk-Hansen","2026-01-07T16:40:56.902+0100","Report a Bug"],["DS-181","DS-181","Done","Done","CSG","bug in calender Dobby","2026-01-07T18:39:32.986+0100",null],["DS-182","DS-182","Done","Done","Unknown","Failed YellowPay 3400000305649","2026-01-08T14:38:33.365+0100",null],["DS-183","DS-183","Done","Done","YellowBeard","External partners can see all customers and machines","2026-01-09T09:54:32.186+0100",null],["DS-184","DS-184","Done","Done","YellowBeard","Missing info on coffee subscription","2026-01-09T10:58:33.327+0100",null],["DS-185","DS-185","Done","Done","YellowBeard","Only one active task per machine","2026-01-09T12:51:38.887+0100",null],["DS-186","DS-186","In Progress","In Progress","CSG","Recent Machine data overwrites historic machine data","2026-01-12T13:03:54.534+0100",null],["DS-187","DS-187","Done","Done","YellowBeard","Can't Upload Profile Picture","2026-01-12T13:41:17.427+0100",null],["DS-188","DS-188","Done","Done","YellowBeard","Postal Code Filter in Task Overview","2026-01-13T13:10:03.041+0100",null],["DS-189","DS-189","Done","Done","Slow Forest","EY Sønderborg is able to see b2c products","2026-01-14T13:40:46.767+0100",null],["DS-190","DS-190","Done","Done","CSG","Error in getting the history","2026-01-16T10:36:08.670+0100",null],["DS-191","DS-191","Cancelled","Done","Unknown","Test98","2026-01-16T12:07:49.921+0100",null],["DS-192","DS-192","Done","Done","Unknown","Test JIRA","2026-01-16T15:10:51.476+0100",null],["DS-193","DS-193","Done","Done","Slow Forest","Ordering tool down","2026-01-17T11:51:21.706+0100",null],["DS-194","DS-194","Done","Done","Slow Forest","Shifting B2C entry Slowforest website","2026-01-19T10:27:08.231+0100",null],["DS-195","DS-195","Done","Done","Slow Forest","Tax Rule on products","2026-01-19T13:29:50.698+0100",null],["DS-196","DS-196","Done","Done","Slow Forest","Update B2C \"backend\" VAT","2026-01-19T15:36:12.680+0100",null],["DS-197","DS-197","Done","Done","YellowBeard","FW: Standardbetingelser - in YB SMART sales module","2026-01-20T08:16:51.611+0100",null],["DS-198","DS-198","In Progress","In Progress","YellowBeard","Make Existing Agreement Available in Sales Module","2026-01-20T08:22:18.915+0100",null],["DS-199","DS-199","Done","Done","YellowBeard","FW: EAN - gør så shop kan huske det flueben","2026-01-20T13:59:51.451+0100",null],["DS-200","DS-200","Done","Done","CSG","FW: Questions regarding invoice Q1 2026","2026-01-20T15:25:57.854+0100",null],["DS-201","DS-201","Done","Done","YellowBeard","FW: en anden EAN udfordring som skal løses.","2026-01-20T16:28:52.954+0100",null],["DS-202","DS-202","Done","Done","Slow Forest","OT and Admin site is down?","2026-01-21T11:02:54.152+0100",null],["DS-203","DS-203","In Progress","In Progress","Slow Forest","B2C integration warehouse","2026-01-22T13:03:24.457+0100",null],["DS-204","DS-204","Done","Done","Slow Forest","VAT not shown in order confirmation","2026-01-22T13:12:01.151+0100",null],["DS-205","DS-205","Done","Done","YellowBeard","FW: Serviceplan","2026-01-22T13:45:52.868+0100",null],["DS-206","DS-206","Done","Done","Slow Forest","Shipping rule duplicates","2026-01-22T14:09:25.149+0100",null],["DS-207","DS-207","Done","Done","Slow Forest","Test B2C site","2026-01-22T14:43:07.148+0100",null],["DS-209","DS-209","Done","Done","YellowBeard","Omsætningsstatistik --> integration af adressen","2026-01-23T12:27:27.568+0100",null],["DS-210","DS-210","Done","Done","YellowBeard","Only machine 3400000142471 needs to remain in Smart","2026-01-23T15:44:55.006+0100",null],["DS-211","DS-211","Escalated","In Progress","YellowBeard","Proof of work","2026-01-23T15:54:02.554+0100",null],["DS-212","DS-212","Done","Done","YellowBeard","Customer synchronization to the shop is not working.","2026-01-26T07:45:44.462+0100",null],["DS-213","DS-213","Done","Done","Slow Forest","OT not responding just blank","2026-01-26T15:32:53.289+0100",null],["DS-214","DS-214","Done","Done","CSG","No counters in checklist when checking the history","2026-01-26T16:10:32.070+0100",null],["DS-215","DS-215","Done","Done","Slow Forest","Product group overview","2026-01-29T09:13:38.959+0100",null],["DS-216","DS-216","Done","Done","YellowBeard","When customer creates two identical tasks","2026-01-29T13:09:59.736+0100",null],["DS-217","DS-217","Done","Done","Slow Forest","Customer seeing the wrong products","2026-01-29T15:24:26.340+0100",null],["DS-218","DS-218","Done","Done","YellowBeard","The cup agreement does not take effect, and customers are invoiced.","2026-01-29T15:56:40.732+0100",null],["DS-219","DS-219","Done","Done","Slow Forest","Country Code on Phone number issue","2026-02-02T08:08:54.650+0100",null],["DS-220","DS-220","Done","Done","Slow Forest","No Germany order notification received in Slow order mailbox - Order No : 1438","2026-02-03T11:18:55.196+0100",null],["DS-221","DS-221","Done","Done","Slow Forest","Webshop order received but it is not yet live - Frederik Dam Order ID # 1441","2026-02-05T04:19:24.508+0100",null],["DS-222","DS-222","Done","Done","YellowBeard","Missing payment option when closing task F260203052","2026-02-05T14:53:26.976+0100",null],["DS-223","DS-223","Done","Done","YellowBeard","External supplier BWT not receiving task assignment notifications","2026-02-09T14:07:01.396+0100",null],["DS-224","DS-224","Done","Done","YellowBeard","Salespeople should be able to see all customers.","2026-02-09T19:21:19.867+0100",null],["DS-225","DS-225","Escalated","In Progress","YellowBeard","Remove Price Groups when creating a new offer...","2026-02-09T19:25:51.588+0100",null],["DS-226","DS-226","Done","Done","YellowBeard","FW: New college in operations","2026-02-10T09:28:52.105+0100",null],["DS-227","DS-227","Done","Done","YellowBeard","Scan spar part QR fails","2026-02-10T10:20:59.284+0100",null],["DS-228","DS-228","Done","Done","YellowBeard","Wrong product on coffe subscription...","2026-02-10T10:41:58.612+0100",null],["DS-229","DS-229","Done","Done","Slow Forest","No connection to the ordering tool","2026-02-11T09:22:50.782+0100",null],["DS-230","DS-230","Done","Done","YellowBeard","Ikke adgang til Kirppu","2026-02-11T11:12:28.878+0100",null],["DS-231","DS-231","Done","Done","YellowBeard","This customer is claiming that the app is not working.","2026-02-11T14:57:08.360+0100",null],["DS-232","DS-232","Cancelled","Done","Unknown","vv decv","2026-02-12T08:35:04.457+0100",null],["DS-233","DS-233","Done","Done","YellowBeard","Tilbud","2026-02-12T08:56:16.861+0100",null],["DS-234","DS-234","Escalated","In Progress","YellowBeard","Coffee subscription is not being stopped","2026-02-13T10:19:48.677+0100",null],["DS-235","DS-235","Escalated","In Progress","YellowBeard","Change address on scheduled deliveries","2026-02-13T13:49:56.184+0100",null],["DS-236","DS-236","Done","Done","Slow Forest","No Order confirmation for Order 1494","2026-02-13T13:59:40.494+0100",null],["DS-237","DS-237","Escalated","In Progress","YellowBeard","Filtered to show only new tasks, bur I can still see these three tasks, even though they are assigned","2026-02-16T09:41:42.694+0100",null],["DS-238","DS-238","Done","Done","YellowBeard","Webshob down...","2026-02-17T10:31:40.406+0100",null],["DS-239","DS-239","Cancelled","Done","Dobby","Re: SHOP nede!","2026-02-17T10:31:53.601+0100",null],["DS-240","DS-240","Done","Done","YellowBeard","Cant download coffee subsription","2026-02-17T12:47:05.443+0100",null],["DS-241","DS-241","Done","Done","YellowBeard","Orders from Sprinter's website are not going through","2026-02-17T15:44:45.963+0100",null],["DS-242","DS-242","Done","Done","Slow Forest","Address Field Becomes Inactive in Ordering Tool","2026-02-19T08:26:51.862+0100",null],["DS-243","DS-243","Done","Done","Slow Forest","No order confirmation again - order no. 1523","2026-02-19T12:18:09.904+0100",null],["DS-244","DS-244","Done","Done","YellowBeard","Customer do not receive notifications in their mailbox when tasks are created.","2026-02-19T17:06:33.105+0100",null],["DS-245","DS-245","Done","Done","YellowBeard","Salesperson Thomas Knudsen cannot create an offer","2026-02-23T11:30:37.962+0100",null],["DS-246","DS-246","Done","Done","YellowBeard","Task created on water system doesn't appear in SMART as a task for a water system, but as an error.","2026-02-23T14:44:17.792+0100",null],["DS-247","DS-247","Escalated","In Progress","YellowBeard","Machines change model fram MS to FM","2026-02-23T14:55:27.968+0100",null],["DS-248","DS-248","Done","Done","Slow Forest","QCCPayment Report missing Customers Name and Country","2026-02-24T13:30:06.284+0100",null],["DS-249","DS-249","Done","Done","CSG","No photo can be uploaded","2026-02-25T09:20:55.949+0100",null],["DS-250","DS-250","In Progress","In Progress","Slow Forest","Orders export Report missing info","2026-02-25T13:27:40.670+0100",null],["DS-251","DS-251","Done","Done","YellowBeard","Shop is down","2026-02-25T15:15:52.322+0100",null],["DS-252","DS-252","Done","Done","YellowBeard","Cup agreement is not showing in shop","2026-02-25T15:36:23.341+0100",null],["DS-253","DS-253","In Progress","In Progress","Selecta DK","Exporting tasks","2026-02-26T12:38:43.484+0100",null],["DS-254","DS-254","Done","Done","Selecta DK","Nic Holmberg can not login","2026-02-27T16:22:12.418+0100",null],["DS-255","DS-255","Escalated","In Progress","CSG","Only 1 mailadres to add to installationadress","2026-02-27T16:46:22.134+0100",null],["DS-256","DS-256","Done","Done","YellowBeard","Cannot create service task in the app.","2026-03-02T11:02:02.872+0100",null],["DS-257","DS-257","Done","Done","YellowBeard","Price group 81 instead of 88 during synchronization from e-conomic to Smart","2026-03-03T08:08:38.842+0100",null],["DS-258","DS-258","Waiting for support","In Progress","Selecta DK","Machine export","2026-03-04T07:28:22.237+0100",null],["DS-259","DS-259","Done","Done","CSG","Map doesn't work AGAIN!","2026-03-04T08:17:06.309+0100",null],["DS-260","DS-260","Done","Done","YellowBeard","Existing purchase agreements are not terminated when an extension is made.","2026-03-04T09:02:11.888+0100",null],["DS-261","DS-261","Done","Done","YellowBeard","VS: Ring venligst tilbage","2026-03-04T09:59:52.492+0100",null],["DS-262","DS-262","Done","Done","YellowBeard","VS: Flere elementer i status","2026-03-04T10:05:52.053+0100",null],["DS-263","DS-263","Done","Done","YellowBeard","Not able to change the task status from Kørsel to I gang in the app","2026-03-04T11:15:41.481+0100",null],["DS-264","DS-264","Done","Done","YellowBeard","Monitoring of key services","2026-03-04T13:01:09.093+0100",null],["DS-265","DS-265","Done","Done","Unknown","Nikolaj Gaba forsøger at kontakte dig i Microsoft Teams","2026-03-05T13:11:35.386+0100",null],["DS-266","DS-266","Escalated","In Progress","YellowBeard","Purchase agreements should not be possible to set up for recurring delivery.","2026-03-05T20:51:40.154+0100",null],["DS-267","DS-267","Done","Done","YellowBeard","Fault on the monthly discount code","2026-03-06T13:15:45.042+0100",null],["DS-268","DS-268","Done","Done","YellowBeard","Salg kan ikke oprette kundeordre til denne kunde CVR 34897778","2026-03-09T08:35:22.628+0100",null],["DS-269","DS-269","Done","Done","YellowBeard","kaffeaftale kan ikke oprette Rødovre Bowling","2026-03-09T09:41:43.195+0100",null],["DS-270","DS-270","Waiting for support","In Progress","YellowBeard","Wrongful review","2026-03-09T10:33:31.368+0100",null],["DS-271","DS-271","Done","Done","Selecta DK","Ingredients Subscription","2026-03-10T09:25:12.224+0100",null],["DS-272","DS-272","Done","Done","YellowBeard","SwitchPay order","2026-03-11T09:49:45.771+0100",null],["DS-273","DS-273","Done","Done","YellowBeard","Failing YellowPay","2026-03-11T15:00:57.287+0100",null],["DS-274","DS-274","Done","Done","CSG","Failure in App","2026-03-11T16:14:26.750+0100",null],["DS-275","DS-275","Done","Done","YellowBeard","Cannot log in. Urgent!","2026-03-11T22:22:13.263+0100",null],["DS-276","DS-276","Done","Done","Slow Forest","Shipping Logic Issue with Combined Parcel and Pallet Weights","2026-03-12T09:44:04.002+0100",null],["DS-277","DS-277","Done","Done","Selecta DK","Yellowpay needs to be changed to Betalingsmodul","2026-03-13T13:18:02.487+0100",null],["DS-278","DS-278","Done","Done","Selecta DK","Costumer sign off in app","2026-03-16T10:16:22.450+0100",null],["DS-279","DS-279","Cancelled","Done","Selecta DK","Missing update on AGREEMENT SETTINGS / CUP AGREEMENT VALUE / SERVICE PER MONTH","2026-03-16T12:58:37.320+0100",null],["DS-280","DS-280","Done","Done","Unknown","Need more tabs on AGREEMENT SETTING / COFFEE AGREEMENT VALUE / Coffee Products etc","2026-03-16T13:13:45.294+0100",null],["DS-281","DS-281","Escalated","In Progress","Selecta DK","Cannot add new products AGREEMENT SETTING / COFFEE AGREEMENT VALUE / New product","2026-03-16T13:23:41.644+0100",null]];
+const RAW_TICKETS=_RD.map(r=>Object.fromEntries(_TK.map((k,i)=>[k,r[i]])));
+const ALL_TICKETS = RAW_TICKETS.filter(t => !EXCLUDE_ORGS.has(t.o));
+
+let charts = {};
+let activePeriod = 'all';
+
+// ── helpers ──────────────────────────────────────────────
+const $id = id => document.getElementById(id);
+const r1 = n => Math.round(n*10)/10;
+function median(a){ if(!a.length) return 0; const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
+function avg(a){ return a.length?a.reduce((x,y)=>x+y,0)/a.length:0; }
+function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/864e5); }
+function weekMonday(ds){ const d=new Date(ds+'T00:00:00'),day=d.getDay(),diff=day===0?-6:1-day; d.setDate(d.getDate()+diff); return d.toISOString().slice(0,10); }
+function fmtWeek(iso){ return new Date(iso+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function monthKey(ds){ return new Date(ds+'T00:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}); }
+function statusBadge(s){ const m={Done:'badge-green',Escalated:'badge-red','In Progress':'badge-blue','Waiting for support':'badge-orange',Cancelled:'badge-gray'}; return `<span class="badge ${m[s]||'badge-gray'}">${s}</span>`; }
+function ageBadge(d){ return `<span class="badge ${d>30?'badge-red':d>14?'badge-orange':'badge-gray'}">${d}</span>`; }
+function repBadge(n){ return `<span class="badge ${n>=50?'badge-red':n>=15?'badge-orange':n>=5?'badge-blue':'badge-gray'}">${n}</span>`; }
+function destroyCharts(){ Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}}); charts={}; }
+
+// ── filter by period ──────────────────────────────────────
+function getTickets(period) {
+  const p = PERIODS[period];
+  if (!p.start) return ALL_TICKETS;
+  return ALL_TICKETS.filter(t => {
+    if (!t.cd) return false;
+    const d = new Date(t.cd);
+    return d >= p.start && d <= p.end;
+  });
+}
+
+// ── build dashboard ───────────────────────────────────────
+function buildDashboard(period) {
+  destroyCharts();
+  const p = PERIODS[period];
+  const T = getTickets(period);
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0,10);
+
+  const open = T.filter(t=>t.sc==='In Progress');
+  const done = T.filter(t=>t.s==='Done');
+  const cancelled = T.filter(t=>t.s==='Cancelled');
+  const escalated = T.filter(t=>t.s==='Escalated');
+  const inProg = T.filter(t=>t.s==='In Progress');
+  const withRes = T.filter(t=>t.rt!==null&&t.rd!==null);
+  const resTimes = withRes.map(t=>t.rt);
+
+  // Header
+  $id('headerBadge').textContent = p.badge + ' · Customers only';
+  $id('headerHint').textContent = T.length + ' tickets';
+
+  // KPIs
+  $id('kpi-total').textContent = T.length;
+  $id('kpi-total-sub').textContent = 'Customer tickets · ' + p.badge;
+  $id('kpi-open').textContent = open.length;
+  $id('kpi-open-sub').innerHTML = `<span class="danger-text">${escalated.length} escalated · ${inProg.length} in progress</span>`;
+  $id('kpi-done').textContent = done.length;
+  $id('kpi-done-sub').innerHTML = `<span class="good">+ ${cancelled.length} cancelled</span>`;
+  $id('kpi-avg').innerHTML = (resTimes.length ? r1(avg(resTimes)) : '—') + '<span class="kpi-unit">d</span>';
+  $id('kpi-avg-sub').textContent = 'Calendar days · ' + withRes.length + ' tickets';
+  $id('kpi-med').innerHTML = (resTimes.length ? r1(median(resTimes)) : '—') + '<span class="kpi-unit">d</span>';
+  $id('kpi-rate').innerHTML = (T.length ? Math.round(done.length/T.length*100) : 0) + '<span class="kpi-unit">%</span>';
+  $id('kpi-rate-sub').textContent = done.length + ' of ' + T.length + ' in Done category';
+
+  // Pills
+  const pillDefs=[{s:'Done',c:'#0CA87E'},{s:'Escalated',c:'#DC2626'},{s:'In Progress',c:'#4F5EE8'},{s:'Waiting for support',c:'#D97706'},{s:'Cancelled',c:'#9CA3AF'}];
+  const pc={}; T.forEach(t=>pc[t.s]=(pc[t.s]||0)+1);
+  $id('statusPills').innerHTML=pillDefs.map(({s,c})=>{const n=pc[s]||0;if(!n)return'';return`<div class="pill"><div class="pill-dot" style="background:${c}"></div>${s==='Waiting for support'?'Waiting':s}<span class="pill-num">${n}</span></div>`;}).join('');
+
+  // Created vs Resolved (weekly)
+  $id('cvrSub').textContent = 'Weekly · ' + p.badge;
+  $id('typeSub').textContent = T.length + ' customer tickets';
+  const cMap={}, rMap={};
+  T.forEach(t=>{if(t.cd){const k=weekMonday(t.cd);cMap[k]=(cMap[k]||0)+1;}});
+  const rPool = p.start ? ALL_TICKETS.filter(t=>t.rd&&new Date(t.rd)>=p.start&&new Date(t.rd)<=p.end) : ALL_TICKETS.filter(t=>t.rd);
+  rPool.forEach(t=>{if(t.rd){const k=weekMonday(t.rd);rMap[k]=(rMap[k]||0)+1;}});
+  const weeks=[...new Set([...Object.keys(cMap),...Object.keys(rMap)])].sort();
+  const ctxC=$id('cvrChart').getContext('2d');
+  const gC=ctxC.createLinearGradient(0,0,0,200); gC.addColorStop(0,'rgba(79,94,232,0.2)'); gC.addColorStop(1,'rgba(79,94,232,0)');
+  const gR=ctxC.createLinearGradient(0,0,0,200); gR.addColorStop(0,'rgba(12,168,126,0.15)'); gR.addColorStop(1,'rgba(12,168,126,0)');
+  charts.cvr=new Chart(ctxC,{type:'line',data:{labels:weeks.map(fmtWeek),datasets:[
+    {label:'Created',data:weeks.map(k=>cMap[k]||null),borderColor:'#4F5EE8',backgroundColor:gC,borderWidth:2,pointRadius:2,tension:0.3,fill:true,spanGaps:false},
+    {label:'Resolved',data:weeks.map(k=>rMap[k]||null),borderColor:'#0CA87E',backgroundColor:gR,borderWidth:2,pointRadius:2,tension:0.3,fill:true,spanGaps:false}
+  ]},options:{...CHART_DEF,plugins:{...CHART_DEF.plugins,legend:{display:true,labels:{color:'#6B7280',font:{size:10},boxWidth:10,usePointStyle:true}}}}});
+
+  // Tickets by org (bar)
+  const orgAC={}; T.forEach(t=>orgAC[t.o]=(orgAC[t.o]||0)+1);
+  const orgAS=Object.entries(orgAC).sort((a,b)=>b[1]-a[1]);
+  charts.type=new Chart($id('typeChart').getContext('2d'),{type:'bar',data:{labels:orgAS.map(([o])=>o),datasets:[{data:orgAS.map(([,c])=>c),backgroundColor:orgAS.map(([o])=>ORG_COLORS[o]||'#7C3AED'),borderRadius:5,borderSkipped:false}]},options:{...CHART_DEF,indexAxis:'y',plugins:{...CHART_DEF.plugins,legend:{display:false}}}});
+
+  // Res distribution histogram
+  const bins=[1,3,7,14,30,Infinity];
+  const bLabels=['0–1d','1–3d','3–7d','7–14d','14–30d','30+d'];
+  const bColors=['#0CA87E','#0CA87E','#D97706','#D97706','#DC2626','#DC2626'];
+  function calcPct(times){const bc=new Array(6).fill(0);times.forEach(t=>{for(let i=0;i<bins.length;i++){if(t<=bins[i]){bc[i]++;break;}}});return times.length?bc.map(c=>Math.round(c/times.length*1000)/10):bc;}
+  const distOpts={...CHART_DEF,scales:{...CHART_DEF.scales,y:{...CHART_DEF.scales.y,ticks:{color:'#9CA3AF',font:{size:10},callback:v=>v+'%'},title:{display:true,text:'% of resolved',color:'#9CA3AF',font:{size:10}}}}};
+  $id('resAllSub').textContent=withRes.length+' resolved tickets · % breakdown';
+  charts.resAll=new Chart($id('resAllChart').getContext('2d'),{type:'bar',data:{labels:bLabels,datasets:[{data:calcPct(resTimes),backgroundColor:bColors,borderRadius:5,borderSkipped:false}]},options:distOpts});
+
+  // Monthly ticket volume
+  const monthMap={}; T.forEach(t=>{if(t.cd){const mk=monthKey(t.cd);monthMap[mk]=(monthMap[mk]||0)+1;}});
+  const mKeys=Object.keys(monthMap).sort((a,b)=>new Date('01 '+a)-new Date('01 '+b));
+  $id('resBugSub').textContent=T.length+' tickets by creation month';
+  charts.resBug=new Chart($id('resBugChart').getContext('2d'),{type:'bar',data:{labels:mKeys,datasets:[{data:mKeys.map(k=>monthMap[k]||0),backgroundColor:'#4F5EE8',borderRadius:4,borderSkipped:false}]},options:{...CHART_DEF,plugins:{...CHART_DEF.plugins,legend:{display:false}}}});
+
+  // Volume by org over time (trend)
+  const orgOrder=['YellowBeard','Slow Forest','Selecta DK','CSG','Unknown'];
+  const ORG_TREND_COLORS={'YellowBeard':'#DC2626','Slow Forest':'#4F5EE8','Selecta DK':'#0CA87E','CSG':'#D97706','Unknown':'#9CA3AF'};
+  const tPool2=p.start?ALL_TICKETS.filter(t=>t.cd&&new Date(t.cd)>=p.start&&new Date(t.cd)<=p.end):ALL_TICKETS;
+  const tMonths=[...new Set(tPool2.filter(t=>t.cd).map(t=>monthKey(t.cd)))].sort((a,b)=>new Date('01 '+a)-new Date('01 '+b));
+  const activeOrgsForTrend=orgOrder.filter(o=>tPool2.some(t=>t.o===o));
+  Object.keys(Object.fromEntries(tPool2.map(t=>[t.o,1]))).forEach(o=>{if(!activeOrgsForTrend.includes(o)&&o!=='Unknown') activeOrgsForTrend.push(o);});
+  const tDS=activeOrgsForTrend.map(org=>{
+    const data=tMonths.map(m=>tPool2.filter(t=>t.o===org&&t.cd&&monthKey(t.cd)===m).length||null);
+    return {label:org,data,borderColor:ORG_TREND_COLORS[org]||'#7C3AED',backgroundColor:'transparent',borderWidth:2,pointRadius:data.map(v=>v!==null?3:0),pointBackgroundColor:ORG_TREND_COLORS[org]||'#7C3AED',tension:0.35,spanGaps:false};
+  });
+  charts.trend=new Chart($id('trendChart').getContext('2d'),{type:'line',data:{labels:tMonths,datasets:tDS},options:{...CHART_DEF,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:10}},border:{color:'#E5E7EB'}},y:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',font:{size:10}},border:{color:'#E5E7EB'},beginAtZero:true}}}});
+  $id('trendLegend').innerHTML=activeOrgsForTrend.map(o=>`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><span style="display:inline-block;width:20px;height:2px;border-radius:2px;background:${ORG_TREND_COLORS[o]||'#7C3AED'}"></span>${o}</div>`).join('');
+
+  // Backlog aging
+  const ages=open.map(t=>t.cd?daysBetween(t.cd,todayStr):0);
+  const tot=open.length,gt3=ages.filter(a=>a>3).length,gt7=ages.filter(a=>a>7).length,gt30=ages.filter(a=>a>30).length;
+  $id('agingKpis').innerHTML=`
+    <div class="kpi-card danger"><div class="kpi-label">Total Open</div><div class="kpi-value" style="color:var(--danger)">${tot}</div><div class="kpi-sub">Open customer tickets</div></div>
+    <div class="kpi-card warn"><div class="kpi-label">Open &gt; 3 Days</div><div class="kpi-value" style="color:var(--warn)">${gt3}</div><div class="kpi-sub">${tot?Math.round(gt3/tot*100):0}% of open</div></div>
+    <div class="kpi-card warn"><div class="kpi-label">Open &gt; 7 Days</div><div class="kpi-value" style="color:var(--warn)">${gt7}</div><div class="kpi-sub">${tot?Math.round(gt7/tot*100):0}% of open</div></div>
+    <div class="kpi-card danger"><div class="kpi-label">Open &gt; 30 Days</div><div class="kpi-value" style="color:var(--danger)">${gt30}</div><div class="kpi-sub">${tot?Math.round(gt30/tot*100):0}% open &gt;1 month</div></div>`;
+
+  // Oldest open tickets (all types, not just bugs)
+  const sorted=[...open].sort((a,b)=>(b.cd?daysBetween(b.cd,todayStr):0)-(a.cd?daysBetween(a.cd,todayStr):0)).slice(0,15);
+  $id('oldestSub').textContent=`${Math.min(15,open.length)} of ${open.length} open tickets · oldest first`;
+  $id('oldestTbody').innerHTML=sorted.length
+    ?sorted.map(t=>{const age=t.cd?daysBetween(t.cd,todayStr):0;const cr=t.cd?new Date(t.cd).toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'}):'—';const su=(t.r||'').length>42?(t.r||'').slice(0,42)+'…':(t.r||'');return`<tr><td><a href="https://weiswise.atlassian.net/browse/${t.k}" target="_blank" style="color:var(--primary);text-decoration:none;font-weight:600">${t.k}</a></td><td>${statusBadge(t.s)}</td><td>${t.o}</td><td style="color:var(--text-muted)">${su}</td><td>${cr}</td><td style="text-align:right">${ageBadge(age)}</td></tr>`;}).join('')
+    :'<tr><td colspan="6" class="no-data">No open tickets in this period</td></tr>';
+
+  // Backlog by customer bars
+  const orgOC={}; open.forEach(t=>orgOC[t.o]=(orgOC[t.o]||0)+1);
+  const orgOS=Object.entries(orgOC).sort((a,b)=>b[1]-a[1]);
+  const maxO=orgOS.length?orgOS[0][1]:1;
+  $id('backlogSub').textContent=tot+' open tickets';
+  $id('backlogBars').innerHTML=orgOS.length?orgOS.map(([o,c])=>`<div class="aging-item"><div class="aging-label">${o}</div><div class="aging-bar-wrap"><div class="aging-bar" style="width:${Math.round(c/maxO*100)}%;background:${ORG_COLORS[o]||'#7C3AED'}"></div></div><div class="aging-count">${c}</div></div>`).join(''):'<div class="no-data">No open tickets</div>';
+
+  // Org charts
+  $id('orgAllSub').textContent=T.length+' customer tickets';
+  $id('orgOpenSub').textContent=tot+' open · breakdown';
+  charts.orgAll=new Chart($id('orgAllChart').getContext('2d'),{type:'bar',data:{labels:orgAS.map(([o])=>o),datasets:[{data:orgAS.map(([,c])=>c),backgroundColor:orgAS.map(([o])=>ORG_COLORS[o]||'#7C3AED'),borderRadius:5,borderSkipped:false}]},options:{...CHART_DEF,indexAxis:'y'}});
+  const orgOF=orgOS.filter(([,c])=>c>0);
+  charts.orgOpen=new Chart($id('orgOpenChart').getContext('2d'),{type:'doughnut',data:{labels:orgOF.map(([o])=>o),datasets:[{data:orgOF.map(([,c])=>c),backgroundColor:orgOF.map(([o])=>ORG_COLORS[o]||'#7C3AED'),borderWidth:0,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#6B7280',font:{size:10},boxWidth:9,padding:9}},tooltip:CHART_DEF.plugins.tooltip}}});
+
+  // Reporters
+  const predefinedOrgOrder=['YellowBeard','Slow Forest','Selecta DK','CSG','Unknown'];
+  const repData={}; T.forEach(t=>{if(!repData[t.o])repData[t.o]={};repData[t.o][t.r]=(repData[t.o][t.r]||0)+1;});
+  const activeOrgs=predefinedOrgOrder.filter(o=>repData[o]&&Object.keys(repData[o]).length);
+  Object.keys(repData).forEach(o=>{if(!predefinedOrgOrder.includes(o)&&Object.keys(repData[o]).length) activeOrgs.push(o);});
+  $id('reportersGrid').style.gridTemplateColumns=`repeat(${Math.min(4,activeOrgs.length)},1fr)`;
+  $id('reportersGrid').innerHTML=activeOrgs.map(org=>{
+    const tot2=T.filter(t=>t.o===org).length;
+    const reps=Object.entries(repData[org]).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    return`<div><div class="reporter-org-name">${org} <span style="font-size:9px;color:var(--text-dim)">(${tot2})</span></div><table class="data-table"><thead><tr><th>Reporter</th><th style="text-align:right">Tickets</th></tr></thead><tbody>${reps.map(([n,c])=>`<tr><td>${n||'Unknown'}</td><td style="text-align:right">${repBadge(c)}</td></tr>`).join('')}</tbody></table></div>`;
+  }).join('');
+}
+
+// ── period tabs ───────────────────────────────────────────
+document.querySelectorAll('#periodTabs .tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#periodTabs .tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    buildDashboard(btn.dataset.period);
+  });
+});
+
+// ── init ─────────────────────────────────────────────────
+buildDashboard('all');
+</script>
+</body>
+</html>
